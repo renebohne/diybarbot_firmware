@@ -18,6 +18,7 @@ void Task1( void * parameter ) {
      } else if (glassDistance > 0) {
         aux++;
      }
+     //glassDistance = 700;//comment out if you don't have a distance sensor.
      delay(100);
    }
    
