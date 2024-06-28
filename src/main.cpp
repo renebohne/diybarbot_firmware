@@ -11,7 +11,7 @@
    The design of creating the BLE server is:
    1. Create a BLE Server
    2. Create a BLE Service
-   3. Create a BLE Characteristic on the Service  
+   3. Create a BLE Characteristic on the Service  S
    4. Create a BLE Descriptor on the characteristic
    5. Start the service.
    6. Start advertising.
@@ -20,7 +20,9 @@
    Included in the GitHub repository https://github.com/diybar/firmware/Libraries
 */
 
-const bool debug = false;
+#include <Arduino.h>
+
+const bool debug = true;
 const bool debugLoop = false;
 const int numMotors = 9;
 const int maxMotorsRunning = 4;
@@ -38,10 +40,8 @@ int fadeAmount = 10;    // how many points to fade the LED by
 #define LEDC_BASE_FREQ     5000
 
 // fade LED PIN (replace with LED_BUILTIN constant for built-in LED)
-#define LED_PIN            12
-
-// Distance Sensor PIN
-//#define PWM_PIN            22
+//#define LED_PIN 12
+#define LED_PIN 2
 
 bool inProgress = false;
 bool backwardsOn = false;
@@ -141,18 +141,8 @@ void setMotors(String command) {
               motor[motorNumber].run (BACKWARD | RELEASE);
               motorStarted = true;
           } else {   
-              if (glassDistance < minGlassDistance && glassDistance > 0) {
-                  motor[motorNumber].run (FORWARD | RELEASE);
-                  motorStarted = true;
-              } else {
-                  sendBTNotification("noGlass");
-                  if (debug) {
-                      Serial.println("Glass not ready");
-                  }
-                  if (!ledBlink) {
-                      startLedBlink();
-                  }
-              } 
+              motor[motorNumber].run (FORWARD | RELEASE);
+              motorStarted = true;
           }
           if (motorStarted) {
               if (motorsRunning == 0) {
