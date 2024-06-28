@@ -22,6 +22,12 @@
 
 #include <Arduino.h>
 
+#ifdef USE_IICSENSOR
+#include <Wire.h>
+#include <VL53L0X.h>
+VL53L0X sensor;
+#endif
+
 const bool debug = true;
 const bool debugLoop = false;
 
@@ -35,7 +41,7 @@ const int numMotors = 8;
 
 
 const int maxMotorsRunning = 4;
-const int minGlassDistance = 780;
+const int minGlassDistance = 100;
 const int blinkTimes = 10; // Number if blinks if there is no glass
 int fadeAmount = 10;       // how many points to fade the LED by
 
@@ -308,6 +314,17 @@ class MyDisCallbacks : public BLEDescriptorCallbacks
 
 void setup()
 {
+  Serial.begin(115200);
+
+  #ifdef USE_IICSENSOR
+  Wire.begin();
+  sensor.setTimeout(500);
+   if (!sensor.init())
+   {
+    Serial.println("I2C error");
+   }
+  #endif
+
   // Ref: http://esp32.info/docs/esp_idf/html/db/da4/task_8h.html#a25b035ac6b7809ff16c828be270e1431
   xTaskCreatePinnedToCore(
       Task1,       /* pvTaskCode */
@@ -318,15 +335,7 @@ void setup()
       &TaskA,      /* pxCreatedTask */
       0);          /* xCoreID */
 
-  if (debug)
-  {
-    Serial.begin(115200);
-    // wait until serial port opens for native USB devices
-    while (!Serial)
-    {
-      delay(1);
-    }
-  }
+  
 
   Serial.println("Bar v1.91_reverse");
 
@@ -408,6 +417,10 @@ void loop()
 {
   // glassDistance = pulseIn(PWM_PIN, HIGH);
 
+  #ifdef USE_IICSENSOR
+  glassDistance = (int) sensor.readRangeSingleMillimeters();
+  #endif
+
   if (debug && debugLoop)
   {
     Serial.printf("Motors running: %d\n", motorsRunning);
@@ -446,6 +459,7 @@ void loop()
 
   if (turnLedOff)
   {
+    Serial.println("turnLedOff");
     ledcAnalogWrite(LEDC_CHANNEL_0, 0);
     ledOn = false;
     turnLedOff = false;
@@ -457,6 +471,7 @@ void loop()
         for (int i = 0; i < numMotors; ++i)
         {
           motor[i].run(BRAKE);
+          Serial.printf("turn motor %d off\n", i);
           timeToCompletion[i] = 0;
         }
         motorsRunning = 0;
